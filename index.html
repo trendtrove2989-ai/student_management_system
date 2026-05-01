@@ -1318,52 +1318,48 @@
         }
         if(modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
-        function loadStudents() {
-            const students = JSON.parse(localStorage.getItem('premium_students_full')) || [];
-            const enrollments = JSON.parse(localStorage.getItem('premium_enrollments')) || [];
+        async function loadStudents() {
+            const response = await fetch('/api/students');
+            const students = await response.json();
             const tbody = document.getElementById('studentTableBody');
-            if(tbody) tbody.innerHTML = ''; 
-
+            if(!tbody) return;
+            
+            tbody.innerHTML = ''; 
+        
             if (students.length === 0) {
-                if(tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No students found. Add one to begin.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No students found. Add one to begin.</td></tr>`;
                 return;
             }
-
+        
             students.forEach(s => {
-                const hasEnrollments = enrollments.some(e => e.studentId === s.id);
-                const statusHtml = hasEnrollments 
-                    ? `<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981; border-color: rgba(16, 185, 129, 0.3);">Enrolled</span>`
-                    : `<span class="status-badge" style="background: rgba(225, 78, 123, 0.1); color: var(--danger); border-color: rgba(225, 78, 123, 0.3);">Not Enrolled</span>`;
-
-                if(tbody) {
-                    tbody.innerHTML += `<tr>
-                                    <td style="color: var(--accent); font-weight: 600;">${s.id}</td>
-                                    <td style="font-weight: 500;">${s.fname} ${s.lname}</td>
-                                    <td><span class="status-badge" style="background: rgba(179,112,66,0.15); border: 1px solid rgba(179,112,66,0.4);">${s.level}</span></td>
-                                    <td>${s.program}</td>
-                                    <td>${s.department}</td>
-                                    <td>${s.phone}</td>
-                                    <td>${statusHtml}</td>
-                                    <td><button onclick="openEnrollModal('${s.id}', '${s.fname} ${s.lname}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">Manage</button></td>
-                                </tr>`;
-                }
+                const statusHtml = `<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981; border-color: rgba(16, 185, 129, 0.3);">Database Linked</span>`;
+                
+                tbody.innerHTML += `<tr>
+                    <td style="color: var(--accent); font-weight: 600;">${s.id}</td>
+                    <td style="font-weight: 500;">${s.fname} ${s.lname}</td>
+                    <td><span class="status-badge" style="background: rgba(179,112,66,0.15); border: 1px solid rgba(179,112,66,0.4);">${s.level}</span></td>
+                    <td>${s.program}</td>
+                    <td>${s.department}</td>
+                    <td>${s.phone}</td>
+                    <td>${statusHtml}</td>
+                    <td><button onclick="openEnrollModal('${s.id}', '${s.fname} ${s.lname}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">Manage</button></td>
+                </tr>`;
             });
         }
 
-        function saveStudent(event) {
+        async function saveStudent(event) {
             event.preventDefault(); 
             const progVal = document.getElementById('program').value;
             const genderVal = document.getElementById('gender').value;
             const deptVal = document.getElementById('department').value;
             const levelVal = document.getElementById('stuLevel').value;
-
+        
             if(!progVal || !genderVal || !deptVal || !levelVal) { 
                 alert("Please select values from all the dropdown options."); return; 
             }
-
-            const students = JSON.parse(localStorage.getItem('premium_students_full')) || [];
+        
             const newStudent = {
-                id: "STU-" + (1000 + students.length + 1),
+                id: "STU-" + Math.floor(1000 + Math.random() * 9000),
                 fname: document.getElementById('fName').value,
                 lname: document.getElementById('lName').value,
                 phone: document.getElementById('phone').value,
@@ -1374,9 +1370,13 @@
                 department: deptVal,
                 level: levelVal 
             };
-
-            students.push(newStudent);
-            localStorage.setItem('premium_students_full', JSON.stringify(students)); 
+        
+            await fetch('/api/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newStudent)
+            });
+        
             loadStudents(); 
             closeModal();   
         }
@@ -1893,23 +1893,26 @@
         // Initialize on load
         let currentUser = null;
         
-        function handleLogin() {
+        async function handleLogin() {
             const user = document.getElementById('loginUser').value;
             const pass = document.getElementById('loginPass').value;
             const error = document.getElementById('loginError');
         
-            // Authentication Logic
-            if (user === 'admin' && pass === 'admin') { currentUser = { role: 'admin' }; }
-            else if (user === 'stdu' && pass === 'stdu') { currentUser = { role: 'student' }; }
-            else if (user === 'intr' && pass === 'intr') { currentUser = { role: 'instructor' }; }
-            else {
-                error.style.display = 'block';
-                return;
-            }
+            const response = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            });
+            
+            const data = await response.json();
         
-            // Hide Login & Initialize Dashboard
-            document.getElementById('loginOverlay').style.display = 'none';
-            applyRolePermissions();
+            if (data.success) {
+                currentUser = { role: data.role, id: data.id };
+                document.getElementById('loginOverlay').style.display = 'none';
+                applyRolePermissions();
+            } else {
+                error.style.display = 'block';
+            }
         }
         
         function applyRolePermissions() {
