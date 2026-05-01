@@ -1,0 +1,7 @@
+name = "fast-nuces-ums"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ums_db"
+database_id = "db50bef5-e866-4bc1-a93d-8d461f2074b1"
