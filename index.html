@@ -467,6 +467,7 @@
         }
 
     </style>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
     <!-- LOGIN OVERLAY -->
@@ -1349,6 +1350,7 @@
 
         async function saveStudent(event) {
             event.preventDefault(); 
+            
             const progVal = document.getElementById('program').value;
             const genderVal = document.getElementById('gender').value;
             const deptVal = document.getElementById('department').value;
@@ -1358,12 +1360,15 @@
                 alert("Please select values from all the dropdown options."); return; 
             }
         
+            const newStudentId = "STU-" + Math.floor(1000 + Math.random() * 9000);
+            const newStudentEmail = document.getElementById('email').value;
+        
             const newStudent = {
-                id: "STU-" + Math.floor(1000 + Math.random() * 9000),
+                id: newStudentId,
                 fname: document.getElementById('fName').value,
                 lname: document.getElementById('lName').value,
                 phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
+                email: newStudentEmail,
                 address: document.getElementById('address').value,
                 gender: genderVal,
                 program: progVal,
@@ -1376,6 +1381,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newStudent)
             });
+        
+            emailjs.send("service_uustyq8", "template_xdscc5l", {
+                username: newStudentEmail,
+                password: newStudentId,
+                to_email: newStudentEmail,
+                website_link: window.location.origin
+            }, "JuFUzZjaUHQjrAQXd");
         
             loadStudents(); 
             closeModal();   
@@ -1791,26 +1803,26 @@
             });
         }
 
-        function openTranscriptModal(stuId, stuName) {
+        async function openTranscriptModal(stuId, stuName) {
             document.getElementById('transcriptStudentName').innerText = `${stuName} (${stuId})`;
-            const exams = JSON.parse(localStorage.getItem('premium_exams')) || [];
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
             const tbody = document.getElementById('transcriptCoursesBody');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading database...</td></tr>';
+            tModal.classList.add('active');
+
+            // Fetch from your new API
+            const response = await fetch(`/api/transcript?id=${stuId}`);
+            const data = await response.json();
+            
             tbody.innerHTML = '';
 
-            // Get all exams for this student
-            const stuExams = exams.filter(ex => ex.studentId === stuId);
-            
-            if(stuExams.length === 0) {
+            if(!data.exams || data.exams.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No exam records found for this student.</td></tr>`;
                 document.getElementById('transcriptSgpaDisplay').innerText = "0.00";
-                tModal.classList.add('active');
                 return;
             }
 
-            // Aggregate marks by course
             let courseTotals = {};
-            stuExams.forEach(ex => {
+            data.exams.forEach(ex => {
                 if(!courseTotals[ex.courseId]) {
                     courseTotals[ex.courseId] = { obtained: 0, total: 0 };
                 }
@@ -1821,19 +1833,15 @@
             let totalQualityPoints = 0;
             let totalCreditHours = 0;
 
-            // Render table and calculate SGPA
             Object.keys(courseTotals).forEach(courseId => {
                 const cData = courseTotals[courseId];
-                const courseDetails = courses.find(c => c.id === courseId);
+                const courseDetails = data.courses.find(c => c.id === courseId);
                 const crHrs = courseDetails ? parseFloat(courseDetails.credits) : 3; 
                 const cName = courseDetails ? courseDetails.name : 'Unknown';
                 
-                // Calculate Percentage
                 const percentage = (cData.obtained / cData.total) * 100;
                 
-                // Standard University Grading Scale logic
-                let grade = '';
-                let gp = 0;
+                let grade = ''; let gp = 0;
                 if(percentage >= 90) { grade = 'A+'; gp = 4.0; }
                 else if(percentage >= 86) { grade = 'A'; gp = 4.0; }
                 else if(percentage >= 82) { grade = 'A-'; gp = 3.67; }
@@ -1850,10 +1858,7 @@
                 totalQualityPoints += (gp * crHrs);
                 totalCreditHours += crHrs;
 
-                // Color code the grade
-                let gradeColor = "var(--text-main)";
-                if(grade === 'F') gradeColor = "var(--danger)";
-                else if(grade.includes('A')) gradeColor = "var(--success)";
+                let gradeColor = grade === 'F' ? "var(--danger)" : (grade.includes('A') ? "var(--success)" : "var(--text-main)");
 
                 tbody.innerHTML += `
                     <tr>
@@ -1867,20 +1872,13 @@
                 `;
             });
 
-            // Final SGPA Calculation
-            let sgpa = 0;
-            if(totalCreditHours > 0) {
-                sgpa = totalQualityPoints / totalCreditHours;
-            }
-
+            let sgpa = totalCreditHours > 0 ? (totalQualityPoints / totalCreditHours) : 0;
             const sgpaDisplay = document.getElementById('transcriptSgpaDisplay');
             sgpaDisplay.innerText = sgpa.toFixed(2);
             
             if(sgpa < 2.0) sgpaDisplay.style.color = "var(--danger)";
             else if(sgpa >= 3.5) sgpaDisplay.style.color = "var(--success)";
             else sgpaDisplay.style.color = "var(--accent)";
-
-            tModal.classList.add('active');
         }
 
         function closeTranscriptModal() {
@@ -1940,9 +1938,8 @@
         
         // Logic for Student Specific Views
         function openStudentGrades() {
-            // You can call your openTranscriptModal here with a hardcoded student ID 
-            // simulating the logged-in student (e.g., STU-1001)
-            openTranscriptModal('STU-1001', 'Demo Student');
+            // currentUser.id is saved during login!
+            openTranscriptModal(currentUser.id, 'My Official Transcript');
         }
         
         // Logic for Instructor Profile
