@@ -1352,7 +1352,7 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- CUSTOM GLASSY NOTIFICATIONS ---
-        function customAlert(message, type = 'info') {
+        function customcustomAlert(message, type = 'info') {
             const modal = document.getElementById('glassNotificationModal');
             const icon = document.getElementById('notificationIcon');
             const title = document.getElementById('notificationTitle');
@@ -1656,7 +1656,7 @@
             event.preventDefault(); 
             const levelVal = document.getElementById('progLevel').value;
             const deptVal = document.getElementById('progDept').value;
-            if(!levelVal || !deptVal) { alert("Please select both Degree Level and Department."); return; }
+            if(!levelVal || !deptVal) { customAlert("Please select both Degree Level and Department."); return; }
 
             const newProgram = {
                 id: "PRG-" + Math.floor(100 + Math.random() * 900),
@@ -1731,7 +1731,7 @@
             const levelVal = document.getElementById('stuLevel').value;
         
             if(!progVal || !genderVal || !deptVal || !levelVal) { 
-                alert("Please select values from all the dropdown options."); return; 
+                customAlert("Please select values from all the dropdown options."); return; 
             }
         
             const newStudentId = "STU-" + Math.floor(1000 + Math.random() * 9000);
@@ -1767,21 +1767,19 @@
             closeModal();   
         }
         async function deleteStudent(studentId) {
-            if(!confirm(`Are you sure you want to permanently remove student ${studentId} from the database?`)) return;
+            const isConfirmed = await customConfirm(`Are you sure you want to permanently remove student ${studentId} from the database?`);
+            if (!isConfirmed) return;
+            
             try {
-                // Calls the DELETE endpoint on your backend
                 const response = await fetch(`/api/students/${studentId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error("Server rejected the delete request");
                 
-                if (!response.ok) {
-                    throw new Error("Server rejected the delete request");
-                }
-                
-                // Refresh all student-dependent views
                 loadStudents(); 
                 loadExamsView();
                 loadGradesView();
+                customcustomAlert(`Student ${studentId} has been successfully deleted.`, 'success');
             } catch (err) {
-                alert("Failed to delete student. Check your backend connection or ensure the API endpoint exists.");
+                customcustomAlert("Failed to delete student. Check your backend connection.", 'error');
             }
         }
 
@@ -1827,7 +1825,7 @@
             const typeVal = document.getElementById('courseType').value;
             const deptVal = document.getElementById('courseDept').value;
             
-            if(!typeVal || !deptVal) { alert("Please select both Course Type and Department."); return; }
+            if(!typeVal || !deptVal) { customAlert("Please select both Course Type and Department."); return; }
 
             const newCourse = {
                 id: "CRS-" + Math.floor(1001 + Math.random() * 9000),
@@ -1908,7 +1906,7 @@
             const deptVal = document.getElementById('instDept').value;
             const typeVal = document.getElementById('instType').value;
 
-            if(!genderVal || !deptVal || !typeVal) { alert("Please select values from the dropdown options."); return; }
+            if(!genderVal || !deptVal || !typeVal) { customAlert("Please select values from the dropdown options."); return; }
 
             const newInstId = "INS-" + Math.floor(1001 + Math.random() * 9000);
             const instEmail = document.getElementById('instEmail').value;
@@ -1941,19 +1939,17 @@
             closeInstructorModal();   
         }
         async function deleteInstructor(instructorId) {
-            if(!confirm(`Are you sure you want to permanently remove instructor ${instructorId} from the database?`)) return;
+            const isConfirmed = await customConfirm(`Are you sure you want to permanently remove instructor ${instructorId} from the database?`);
+            if (!isConfirmed) return;
+            
             try {
-                // Calls the DELETE endpoint on your backend
                 const response = await fetch(`/api/instructors/${instructorId}`, { method: 'DELETE' });
+                if (!response.ok) throw new Error("Server rejected the delete request");
                 
-                if (!response.ok) {
-                    throw new Error("Server rejected the delete request");
-                }
-                
-                // Refresh instructor table
                 loadInstructors();
+                customcustomAlert(`Instructor ${instructorId} has been successfully deleted.`, 'success');
             } catch (err) {
-                alert("Failed to delete instructor. Check your backend connection or ensure the API endpoint exists.");
+                customcustomAlert("Failed to delete instructor. Check your backend connection.", 'error');
             }
         }
         // --- MANY-TO-MANY COURSE ASSIGNMENT LOGIC ---
@@ -2024,7 +2020,7 @@
 
         async function addAssignment() {
             const courseId = document.getElementById('assignCourseId').value;
-            if(!courseId) { alert("Please select a course from the dropdown first."); return; }
+            if(!courseId) { customAlert("Please select a course from the dropdown first."); return; }
             
             await fetch('/api/assignments', {
                 method: 'POST',
@@ -2118,14 +2114,14 @@
         async function addEnrollment(event) {
             event.preventDefault();
             const courseId = document.getElementById('enrollCourseId').value;
-            if(!courseId) { alert("Please select a course from the dropdown."); return; }
+            if(!courseId) { customAlert("Please select a course from the dropdown."); return; }
 
             // Fetch current enrollments to check for duplicates
             const checkRes = await fetch('/api/enrollments');
             const currentEnrollments = await checkRes.json();
 
             if(currentEnrollments.some(e => e.studentId === currentEnrollStudentId && e.courseId === courseId)) {
-                alert("Student is already enrolled in this course!"); return;
+                customAlert("Student is already enrolled in this course!"); return;
             }
 
             const enrollData = {
@@ -2168,11 +2164,11 @@
 
         function saveGlobalExamType() {
             const val = document.getElementById('globalExamTypeVal').value;
-            if(!val) { alert("Please select an exam type."); return; }
+            if(!val) { customAlert("Please select an exam type."); return; }
             localStorage.setItem('global_exam_type', val);
             closeExamTypeModal();
             loadExamsView();
-            alert(`Global Exam Session set to: ${val}`);
+            customAlert(`Global Exam Session set to: ${val}`);
         }
 
         async function loadExamsView() {
@@ -2280,7 +2276,7 @@
         function openViewExamDetailsModal(stuId, stuName, program) {
             const currentType = localStorage.getItem('global_exam_type');
             if(!currentType || currentType === "Not Set") {
-                alert("Please set the Global Exam Type first using the button at the top of the page.");
+                customAlert("Please set the Global Exam Type first using the button at the top of the page.");
                 return;
             }
 
@@ -2552,7 +2548,7 @@
             const total = document.getElementById(`total_${studentId}_${courseId}`).value;
             const examSession = localStorage.getItem('global_exam_type') || "Final";
             
-            if(!obtained || !total) { alert('Please enter both obtained and total marks.'); return; }
+            if(!obtained || !total) { customcustomAlert('Please enter both obtained and total marks.'); return; }
 
             const examData = {
                 examId: "EXM-" + Math.floor(10000 + Math.random() * 90000),
@@ -2569,7 +2565,7 @@
                 body: JSON.stringify(examData)
             });
 
-            alert(`Success! Marks securely uploaded for ${studentId}.`);
+            customAlert(`Success! Marks securely uploaded for ${studentId}.`);
             document.getElementById(`marks_${studentId}_${courseId}`).value = ''; 
         }
         // --- STUDENT DASHBOARD LOGIC ---
@@ -2839,7 +2835,7 @@
             const total = document.getElementById(`new_total_${studentId}_${courseId}`).value;
             const examSession = document.getElementById('instExamTypeSelect').value;
             
-            if(!obtained || !total) { alert('Please enter both obtained and total marks.'); return; }
+            if(!obtained || !total) { customAlert('Please enter both obtained and total marks.'); return; }
 
             const examData = {
                 examId: "EXM-" + Math.floor(10000 + Math.random() * 90000),
@@ -2856,7 +2852,7 @@
                 body: JSON.stringify(examData)
             });
 
-            alert(`Success! ${examSession} marks securely uploaded for ${studentId}.`);
+            customAlert(`Success! ${examSession} marks securely uploaded for ${studentId}.`);
             document.getElementById(`new_marks_${studentId}_${courseId}`).value = ''; 
         }
 
