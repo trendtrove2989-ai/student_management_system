@@ -1389,21 +1389,21 @@
             element.classList.add('active');
 
             const tabs = ['tab-students', 'tab-departments', 'tab-programs', 'tab-courses', 'tab-faculty', 'tab-exams', 'tab-grades', 'tab-inst-profile', 'tab-inst-upload', 'tab-inst-results', 'tab-student-profile', 'tab-student-marks'];
+            
+            // Hide all tabs
             tabs.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
             });
+            
             const placeholderTab = document.getElementById('tab-placeholder');
             if(placeholderTab) placeholderTab.style.display = 'none';
 
-            if (tabId === 'tab-students') { document.getElementById(tabId).style.display = 'block'; loadStudents(); }
-            else if (tabId === 'tab-departments') { document.getElementById(tabId).style.display = 'block'; loadDepartments(); }
-            else if (tabId === 'tab-programs') { document.getElementById(tabId).style.display = 'block'; loadPrograms(); }
-            else if (tabId === 'tab-courses') { document.getElementById(tabId).style.display = 'block'; loadCourses(); }
-            else if (tabId === 'tab-faculty') { document.getElementById(tabId).style.display = 'block'; loadInstructors(); }
-            else if (tabId === 'tab-exams') { document.getElementById(tabId).style.display = 'block'; loadExamsView(); }
-            else if (tabId === 'tab-grades') { document.getElementById(tabId).style.display = 'block'; loadGradesView(); }
-            else { if(placeholderTab) { placeholderTab.style.display = 'block'; document.getElementById('placeholder-title').innerText = element.innerText; } }
+            // Dynamically show the target tab
+            const targetTab = document.getElementById(tabId);
+            if(targetTab) {
+                targetTab.style.display = 'block';
+            }
         }
 
         // --- GLOBAL CUSTOM DROPDOWN HANDLER ---
@@ -1690,14 +1690,18 @@
             if(!confirm(`Are you sure you want to permanently remove student ${studentId} from the database?`)) return;
             try {
                 // Calls the DELETE endpoint on your backend
-                await fetch(`/api/students/${studentId}`, { method: 'DELETE' });
+                const response = await fetch(`/api/students/${studentId}`, { method: 'DELETE' });
+                
+                if (!response.ok) {
+                    throw new Error("Server rejected the delete request");
+                }
                 
                 // Refresh all student-dependent views
                 loadStudents(); 
                 loadExamsView();
                 loadGradesView();
             } catch (err) {
-                alert("Failed to delete student. Check your backend connection.");
+                alert("Failed to delete student. Check your backend connection or ensure the API endpoint exists.");
             }
         }
 
@@ -1860,12 +1864,16 @@
             if(!confirm(`Are you sure you want to permanently remove instructor ${instructorId} from the database?`)) return;
             try {
                 // Calls the DELETE endpoint on your backend
-                await fetch(`/api/instructors/${instructorId}`, { method: 'DELETE' });
+                const response = await fetch(`/api/instructors/${instructorId}`, { method: 'DELETE' });
+                
+                if (!response.ok) {
+                    throw new Error("Server rejected the delete request");
+                }
                 
                 // Refresh instructor table
                 loadInstructors();
             } catch (err) {
-                alert("Failed to delete instructor. Check your backend connection.");
+                alert("Failed to delete instructor. Check your backend connection or ensure the API endpoint exists.");
             }
         }
         // --- MANY-TO-MANY COURSE ASSIGNMENT LOGIC ---
