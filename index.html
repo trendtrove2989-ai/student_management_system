@@ -4,8 +4,155 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FAST NUCES - Premium UMS</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b37042' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M22 10v6M2 10l10-5 10 5-10 5z'/><path d='M6 12v5c3 3 9 3 12 0v-5'/></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* --- PREMIUM PRELOADER CSS --- */
+        #preloader {
+            position: fixed;
+            top: 0; left: 0; 
+            width: 100vw; height: 100vh;
+            z-index: 999999; /* Stays above absolutely everything */
+            display: flex;
+            pointer-events: none; /* Ensures clicks don't get blocked after it drops */
+        }
+        
+        .loader-bar {
+            flex: 1; 
+            height: 100%;
+            background: rgba(150, 89, 48, 0.85); 
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            transition: transform 0.9s cubic-bezier(0.77, 0, 0.175, 1);
+            transform-origin: top;
+            /* Removed the white border so it blends perfectly into a single screen */
+            border-right: none; 
+        }
+        
+        #preloader.finished .loader-bar {
+            transform: translateY(100vh); 
+        }
+
+        .loading-content-wrapper {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.4s ease;
+        }
+
+        #preloader.finished .loading-content-wrapper {
+            opacity: 0; 
+        }
+
+        .loading-text {
+            margin-bottom: 12px;
+            font-size: 0.8rem;
+            /* Changed to white so it stands out against the dark tan */
+            color: #ffffff;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .loading-line-bg {
+            width: 200px;
+            height: 2px;
+            /* Darker background track for the line */
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-line-fill {
+            width: 0%;
+            height: 100%;
+            /* Changed fill to a soft skin/cream color to match the theme */
+            background: #fbe8d7; 
+            transition: width 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* --- 3D FLIP LOGIN CARD CSS --- */
+        .flip-container {
+            perspective: 1000px;
+            width: 450px;
+            height: 420px;
+            z-index: 10001; /* Ensure it sits above the shapes */
+        }
+
+        .flipper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+        }
+
+        /* Triggered by mouse enter/leave */
+        .flip-container.flipped .flipper {
+            transform: rotateY(180deg);
+        }
+
+        /* Apply the ultimate glass effect directly to the faces */
+        .front, .back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 24px;
+            
+            /* Enhanced Pure Glass Effect */
+            background: rgba(255, 255, 255, 0.15); /* Much more transparent */
+            backdrop-filter: blur(35px); /* Stronger blur */
+            -webkit-backdrop-filter: blur(35px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.8); /* Strong top edge highlight */
+            border-left: 1px solid rgba(255, 255, 255, 0.8); /* Strong left edge highlight */
+            /* Add drop shadow AND an inner glow for realistic glass volume */
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1), inset 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        /* Front specific styles */
+        .front {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transform: rotateY(0deg);
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        /* Back specific styles */
+        .back {
+            transform: rotateY(180deg);
+            padding: 40px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        @keyframes pulsePrompt {
+            0%, 100% { opacity: 0.4; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(3px); }
+        }
+
+        .cursor-prompt {
+            position: absolute;
+            bottom: 30px;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+            color: var(--accent);
+            animation: pulsePrompt 2s infinite ease-in-out;
+        }
         /* --- GLOBAL VARIABLES (Skin & Tan Theme) --- */
         :root {
             --glass-bg: rgba(255, 255, 255, 0.45); 
@@ -470,24 +617,50 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
-    <!-- LOGIN OVERLAY -->
-    <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(45deg, #fbe8d7, #d2b48c); z-index: 10000; display: flex; justify-content: center; align-items: center;">
-        <div class="glass-card sm-modal" style="padding: 40px; text-align: center;">
-            <h2 style="color: var(--accent); margin-bottom: 10px;">University Portal</h2>
-            <p style="color: var(--text-muted); margin-bottom: 30px;">Login to access your dashboard</p>
-            
-            <div class="input-group">
-                <input type="text" id="loginUser" required autocomplete="off">
-                <label>Username</label>
+    <!-- PREMIUM PRELOADER -->
+    <div id="preloader">
+        <div class="loading-content-wrapper">
+            <div class="loading-text">System Initializing</div>
+            <div class="loading-line-bg">
+                <div class="loading-line-fill"></div>
             </div>
-            <div class="input-group">
-                <input type="password" id="loginPass" required autocomplete="off">
-                <label>Password</label>
-            </div>
-            
-            <button class="btn-primary" style="width: 100%;" onclick="handleLogin()">Login</button>
-            <p id="loginError" style="color: var(--danger); margin-top: 15px; font-size: 0.85rem; display: none;">Invalid credentials!</p>
         </div>
+        <!-- JavaScript will automatically inject the vertical bars here -->
+    </div>
+    <!-- LOGIN OVERLAY (3D FLIP) -->
+    <div id="loginOverlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(45deg, #fbe8d7, #d2b48c); z-index: 10000; display: flex; justify-content: center; align-items: center;">
+        
+        <!-- The flip container. Flips on enter, reverts on leave -->
+        <div class="flip-container sm-modal" onmouseenter="this.classList.add('flipped')" onmouseleave="this.classList.remove('flipped')">
+            <div class="flipper">
+                
+                <!-- FRONT FACE: Welcome Screen (Removed .glass-card) -->
+                <div class="front">
+                    <h1 style="color: var(--accent); font-size: 2.8rem; font-weight: 600;">Welcome</h1>
+                    <div class="cursor-prompt">Move your cursor to start</div>
+                </div>
+
+                <!-- BACK FACE: Login Form (Removed .glass-card) -->
+                <div class="back">
+                    <h2 style="color: var(--accent); margin-bottom: 10px;">University Portal</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 30px;">Login to access your dashboard</p>
+                    
+                    <div class="input-group">
+                        <input type="text" id="loginUser" required autocomplete="off">
+                        <label>Username</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="loginPass" required autocomplete="off">
+                        <label>Password</label>
+                    </div>
+                    
+                    <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="handleLogin()">Login</button>
+                    <p id="loginError" style="color: var(--danger); margin-top: 15px; font-size: 0.85rem; display: none;">Invalid credentials!</p>
+                </div>
+
+            </div>
+        </div>
+
     </div>
     <!-- Background Decoration -->
     <div class="shape shape-1"></div>
@@ -536,8 +709,7 @@
                             <li class="admin-only" onclick="switchTab('tab-exams', this)">Exams Schedule</li>
                             
                             <!-- Instructor Only -->
-                            <li class="inst-only" style="display:none;" onclick="showInstructorInfo()">My Teaching Load</li>
-                            <li class="inst-only" style="display:none;" onclick="switchTab('tab-exams', this)">Upload Marks</li>
+                            <li class="inst-only" style="display:none;" onclick="loadInstructorPortal()">My Teaching Load</li>
                             
                             <!-- Student Only -->
                             <li class="stu-only" style="display:none;" onclick="showStudentInfo()">My Profile</li>
@@ -742,11 +914,37 @@
                             </div>
                         </div>
 
-                        <!-- TAB: PLACEHOLDER FOR OTHERS -->
-                        <div id="tab-placeholder" class="tab-content" style="display: none;">
-                            <div class="glass-card" style="text-align: center; padding: 80px 20px;">
-                                <h2 style="color: var(--accent); margin-bottom: 15px;" id="placeholder-title">Select Module</h2>
-                                <p style="color: var(--text-muted);">This module's interface is ready to be hooked to your Oracle database backend procedures.</p>
+                        <!-- TAB: INSTRUCTOR PORTAL -->
+                        <div id="tab-instructor-portal" class="tab-content" style="display: none;">
+                            <div class="glass-card">
+                                <div class="card-header">
+                                    <h2>My Teaching Load & Grading</h2>
+                                </div>
+                                <p style="color: var(--text-muted); margin-bottom: 20px;">Select your assigned course to view enrolled students and upload marks.</p>
+                                
+                                <div id="instructorCourseButtons" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+                                    <!-- Dynamic Course Buttons Go Here -->
+                                </div>
+
+                                <div id="instructorGradingSection" style="display: none;">
+                                    <h3 id="gradingCourseTitle" style="color: var(--accent); margin-bottom: 15px;"></h3>
+                                    <div style="overflow-x: auto;">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Student ID</th>
+                                                    <th>Name</th>
+                                                    <th>Marks Obtained</th>
+                                                    <th>Total Marks</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="gradingStudentsBody">
+                                                <!-- Dynamic Students Go Here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1083,6 +1281,35 @@
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // --- PRELOADER ANIMATION LOGIC ---
+        document.addEventListener("DOMContentLoaded", () => {
+            const preloader = document.getElementById('preloader');
+            const numBars = 12; // The number of vertical columns the screen breaks into
+            
+            // 1. Generate the glassy bars dynamically
+            for (let i = 0; i < numBars; i++) {
+                let bar = document.createElement('div');
+                bar.className = 'loader-bar';
+                // Delay each bar slightly more than the previous one (left to right)
+                bar.style.transitionDelay = `${i * 0.08}s`; 
+                preloader.appendChild(bar);
+            }
+
+            // 2. Start the thin orange line filling up
+            setTimeout(() => {
+                document.querySelector('.loading-line-fill').style.width = '100%';
+            }, 100);
+
+            // 3. Trigger the bars to drop after the line finishes filling
+            setTimeout(() => {
+                preloader.classList.add('finished');
+                
+                // 4. Remove the preloader from HTML completely after animation ends
+                setTimeout(() => {
+                    preloader.remove();
+                }, 2000); // Gives enough time for the last bar to drop
+            }, 2200); // 2 seconds for line to fill + 200ms buffer
+        });
         // --- NAVIGATION LOGIC ---
         function switchView(layerId, navId) {
             document.querySelectorAll('.nav-links button').forEach(btn => btn.classList.remove('active-nav'));
@@ -1192,8 +1419,9 @@
         function closeDepartmentModal() { dModal.classList.remove('active'); dForm.reset(); }
         if(dModal) dModal.addEventListener('click', (e) => { if (e.target === dModal) closeDepartmentModal(); });
 
-        function loadDepartments() {
-            const departments = JSON.parse(localStorage.getItem('premium_departments')) || [];
+        async function loadDepartments() {
+            const response = await fetch('/api/departments');
+            const departments = await response.json();
             const tbody = document.getElementById('departmentTableBody');
             if(tbody) tbody.innerHTML = ''; 
             
@@ -1230,20 +1458,26 @@
             });
         }
 
-        function saveDepartment(event) {
+        async function saveDepartment(event) {
             event.preventDefault(); 
-            const departments = JSON.parse(localStorage.getItem('premium_departments')) || [];
             const newDept = {
-                id: "DEP-" + (101 + departments.length),
+                id: "DEP-" + Math.floor(100 + Math.random() * 900),
                 name: document.getElementById('deptName').value,
                 location: document.getElementById('deptLocation').value,
                 contact: document.getElementById('deptContact').value
             };
-            departments.push(newDept);
-            localStorage.setItem('premium_departments', JSON.stringify(departments)); 
+            
+            await fetch('/api/departments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newDept)
+            });
+
             loadDepartments(); 
             closeDepartmentModal(); 
         }
+
+        
 
         // --- PROGRAM MODULE LOGIC ---
         const pModal = document.getElementById('programModal');
@@ -1257,8 +1491,9 @@
         }
         if(pModal) pModal.addEventListener('click', (e) => { if (e.target === pModal) closeProgramModal(); });
 
-        function loadPrograms() {
-            const programs = JSON.parse(localStorage.getItem('premium_programs')) || [];
+        async function loadPrograms() {
+            const response = await fetch('/api/programs');
+            const programs = await response.json();
             const tbody = document.getElementById('programTableBody');
             if(tbody) tbody.innerHTML = ''; 
             
@@ -1285,22 +1520,26 @@
             });
         }
 
-        function saveProgram(event) {
+        async function saveProgram(event) {
             event.preventDefault(); 
             const levelVal = document.getElementById('progLevel').value;
             const deptVal = document.getElementById('progDept').value;
             if(!levelVal || !deptVal) { alert("Please select both Degree Level and Department."); return; }
 
-            const programs = JSON.parse(localStorage.getItem('premium_programs')) || [];
             const newProgram = {
-                id: "PRG-" + (100 + programs.length + 1),
+                id: "PRG-" + Math.floor(100 + Math.random() * 900),
                 name: document.getElementById('progName').value,
                 duration: document.getElementById('progDuration').value,
                 level: levelVal,
                 department: deptVal
             };
-            programs.push(newProgram);
-            localStorage.setItem('premium_programs', JSON.stringify(programs)); 
+            
+            await fetch('/api/programs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newProgram)
+            });
+
             loadPrograms(); 
             closeProgramModal();   
         }
@@ -1405,8 +1644,9 @@
         }
         if(cModal) cModal.addEventListener('click', (e) => { if (e.target === cModal) closeCourseModal(); });
 
-        function loadCourses() {
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
+        async function loadCourses() {
+            const response = await fetch('/api/courses');
+            const courses = await response.json();
             const tbody = document.getElementById('courseTableBody');
             if(tbody) tbody.innerHTML = ''; 
             
@@ -1429,16 +1669,15 @@
             });
         }
 
-        function saveCourse(event) {
+        async function saveCourse(event) {
             event.preventDefault(); 
             const typeVal = document.getElementById('courseType').value;
             const deptVal = document.getElementById('courseDept').value;
             
             if(!typeVal || !deptVal) { alert("Please select both Course Type and Department."); return; }
 
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
             const newCourse = {
-                id: "CRS-" + (1001 + courses.length),
+                id: "CRS-" + Math.floor(1001 + Math.random() * 9000),
                 name: document.getElementById('courseName').value,
                 credits: document.getElementById('creditHours').value,
                 totalMarks: document.getElementById('courseTotalMarks').value,
@@ -1446,8 +1685,12 @@
                 department: deptVal
             };
 
-            courses.push(newCourse);
-            localStorage.setItem('premium_courses', JSON.stringify(courses)); 
+            await fetch('/api/courses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newCourse)
+            });
+
             loadCourses(); 
             closeCourseModal();   
         }
@@ -1465,14 +1708,17 @@
         }
         if(iModal) iModal.addEventListener('click', (e) => { if (e.target === iModal) closeInstructorModal(); });
 
-        function loadInstructors() {
-            const instructors = JSON.parse(localStorage.getItem('premium_instructors')) || [];
-            const assignments = JSON.parse(localStorage.getItem('premium_assignments')) || [];
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
-            const tbody = document.getElementById('instructorTableBody');
+        async function loadInstructors() {
+            const response = await fetch('/api/instructors');
+            const { instructors, assignments } = await response.json();
             
+            const crsResponse = await fetch('/api/courses');
+            const courses = await crsResponse.json();
+
+            const tbody = document.getElementById('instructorTableBody');
             if(tbody) tbody.innerHTML = ''; 
-            if (instructors.length === 0) {
+
+            if (!instructors || instructors.length === 0) {
                 if(tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No instructors found. Add one to begin.</td></tr>`;
                 return;
             }
@@ -1500,7 +1746,7 @@
             });
         }
 
-        function saveInstructor(event) {
+        async function saveInstructor(event) {
             event.preventDefault(); 
             const genderVal = document.getElementById('instGender').value;
             const deptVal = document.getElementById('instDept').value;
@@ -1508,20 +1754,33 @@
 
             if(!genderVal || !deptVal || !typeVal) { alert("Please select values from the dropdown options."); return; }
 
-            const instructors = JSON.parse(localStorage.getItem('premium_instructors')) || [];
+            const newInstId = "INS-" + Math.floor(1001 + Math.random() * 9000);
+            const instEmail = document.getElementById('instEmail').value;
+
             const newInst = {
-                id: "INS-" + (1001 + instructors.length),
+                id: newInstId,
                 fname: document.getElementById('instFName').value,
                 lname: document.getElementById('instLName').value,
                 qualification: document.getElementById('instQual').value,
-                email: document.getElementById('instEmail').value,
+                email: instEmail,
                 gender: genderVal,
                 department: deptVal,
                 type: typeVal
             };
 
-            instructors.push(newInst);
-            localStorage.setItem('premium_instructors', JSON.stringify(instructors)); 
+            await fetch('/api/instructors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newInst)
+            });
+
+            emailjs.send("service_uustyq8", "template_xdscc5l", {
+                username: instEmail,
+                password: newInstId,
+                to_email: instEmail,
+                website_link: window.location.origin
+            }, "JuFUzZjaUHQjrAQXd");
+
             loadInstructors(); 
             closeInstructorModal();   
         }
@@ -1530,10 +1789,16 @@
         const aModal = document.getElementById('assignModal');
         let currentAssignInstructorId = null;
 
-        function openAssignModal(instId, instName) {
+
+
+        async function openAssignModal(instId, instName) {
             currentAssignInstructorId = instId;
             document.getElementById('assignInstructorName').innerText = `Instructor: ${instName} (${instId})`;
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
+            
+            // Fetch courses from DB instead of local storage
+            const response = await fetch('/api/courses');
+            const courses = await response.json();
+            
             const dropdownUl = document.getElementById('dynamicCourseListAssign');
             if(dropdownUl) dropdownUl.innerHTML = '';
             
@@ -1555,10 +1820,18 @@
 
         if(aModal) aModal.addEventListener('click', (e) => { if (e.target === aModal) closeAssignModal(); });
 
-        function refreshAssignedList() {
-            const assignments = JSON.parse(localStorage.getItem('premium_assignments')) || [];
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
+        async function refreshAssignedList() {
             const list = document.getElementById('assignedCoursesList');
+            if(list) list.innerHTML = '<li>Loading database...</li>';
+
+            const [assignRes, courseRes] = await Promise.all([
+                fetch('/api/assignments'),
+                fetch('/api/courses')
+            ]);
+            
+            const assignments = await assignRes.json();
+            const courses = await courseRes.json();
+            
             if(list) list.innerHTML = '';
 
             const instAssignments = assignments.filter(a => a.instructorId === currentAssignInstructorId);
@@ -1578,23 +1851,26 @@
             });
         }
 
-        function addAssignment() {
+        async function addAssignment() {
             const courseId = document.getElementById('assignCourseId').value;
             if(!courseId) { alert("Please select a course from the dropdown first."); return; }
-            const assignments = JSON.parse(localStorage.getItem('premium_assignments')) || [];
-            if(assignments.some(a => a.instructorId === currentAssignInstructorId && a.courseId === courseId)) {
-                alert("This course is already assigned to this instructor!"); return;
-            }
-            assignments.push({ instructorId: currentAssignInstructorId, courseId: courseId });
-            localStorage.setItem('premium_assignments', JSON.stringify(assignments));
+            
+            await fetch('/api/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'add', instructorId: currentAssignInstructorId, courseId: courseId })
+            });
+            
             resetCustomDropdown('displayAssignCourse', 'assignCourseId', 'Select Course...');
             refreshAssignedList();
         }
 
-        function removeAssignment(courseId) {
-            let assignments = JSON.parse(localStorage.getItem('premium_assignments')) || [];
-            assignments = assignments.filter(a => !(a.instructorId === currentAssignInstructorId && a.courseId === courseId));
-            localStorage.setItem('premium_assignments', JSON.stringify(assignments));
+        async function removeAssignment(courseId) {
+            await fetch('/api/assignments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'remove', instructorId: currentAssignInstructorId, courseId: courseId })
+            });
             refreshAssignedList();
         }
 
@@ -1602,14 +1878,18 @@
         const eModal = document.getElementById('enrollmentModal');
         let currentEnrollStudentId = null;
 
-        function openEnrollModal(stuId, stuName) {
+        async function openEnrollModal(stuId, stuName) {
             currentEnrollStudentId = stuId;
             document.getElementById('enrollStudentName').innerText = `Student: ${stuName} (${stuId})`;
             document.getElementById('enrollDate').valueAsDate = new Date();
 
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
+            // Fetch courses from DB
+            const response = await fetch('/api/courses');
+            const courses = await response.json();
+            
             const dropdownUl = document.getElementById('dynamicCourseListEnroll');
             if(dropdownUl) dropdownUl.innerHTML = '';
+            
             if(courses.length === 0) {
                 if(dropdownUl) dropdownUl.innerHTML = '<li data-value="">No courses available.</li>';
             } else {
@@ -1630,10 +1910,18 @@
 
         if(eModal) eModal.addEventListener('click', (e) => { if (e.target === eModal) closeEnrollModal(); });
 
-        function refreshEnrollmentList() {
-            const enrollments = JSON.parse(localStorage.getItem('premium_enrollments')) || [];
-            const courses = JSON.parse(localStorage.getItem('premium_courses')) || [];
+        async function refreshEnrollmentList() {
             const list = document.getElementById('enrolledCoursesList');
+            if(list) list.innerHTML = '<li>Loading database...</li>';
+
+            const [enrollRes, courseRes] = await Promise.all([
+                fetch('/api/enrollments'),
+                fetch('/api/courses')
+            ]);
+            
+            const enrollments = await enrollRes.json();
+            const courses = await courseRes.json();
+
             if(list) list.innerHTML = '';
 
             const stuEnrollments = enrollments.filter(e => e.studentId === currentEnrollStudentId);
@@ -1656,34 +1944,46 @@
             });
         }
 
-        function addEnrollment(event) {
+        async function addEnrollment(event) {
             event.preventDefault();
             const courseId = document.getElementById('enrollCourseId').value;
             if(!courseId) { alert("Please select a course from the dropdown."); return; }
 
-            const enrollments = JSON.parse(localStorage.getItem('premium_enrollments')) || [];
-            if(enrollments.some(e => e.studentId === currentEnrollStudentId && e.courseId === courseId)) {
+            // Fetch current enrollments to check for duplicates
+            const checkRes = await fetch('/api/enrollments');
+            const currentEnrollments = await checkRes.json();
+
+            if(currentEnrollments.some(e => e.studentId === currentEnrollStudentId && e.courseId === courseId)) {
                 alert("Student is already enrolled in this course!"); return;
             }
 
-            enrollments.push({ 
-                enrollmentId: "ENR-" + (5000 + enrollments.length + 1),
+            const enrollData = {
+                action: 'add',
+                enrollmentId: "ENR-" + Math.floor(5000 + Math.random() * 9000),
                 studentId: currentEnrollStudentId, 
                 courseId: courseId,
                 academicYear: document.getElementById('enrollAcadYear').value,
                 semester: document.getElementById('enrollSemester').value,
                 enrollDate: document.getElementById('enrollDate').value,
                 status: 'Active'
+            };
+
+            await fetch('/api/enrollments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(enrollData)
             });
-            localStorage.setItem('premium_enrollments', JSON.stringify(enrollments));
+
             resetCustomDropdown('displayEnrollCourse', 'enrollCourseId', 'Select Course...');
             refreshEnrollmentList();
         }
 
-        function removeEnrollment(enrollmentId) {
-            let enrollments = JSON.parse(localStorage.getItem('premium_enrollments')) || [];
-            enrollments = enrollments.filter(e => e.enrollmentId !== enrollmentId);
-            localStorage.setItem('premium_enrollments', JSON.stringify(enrollments));
+        async function removeEnrollment(enrollmentId) {
+            await fetch('/api/enrollments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'remove', enrollmentId: enrollmentId })
+            });
             refreshEnrollmentList();
         }
 
@@ -1896,19 +2196,29 @@
             const pass = document.getElementById('loginPass').value;
             const error = document.getElementById('loginError');
         
-            const response = await fetch('/api/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user, password: pass })
-            });
-            
-            const data = await response.json();
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
         
-            if (data.success) {
-                currentUser = { role: data.role, id: data.id };
-                document.getElementById('loginOverlay').style.display = 'none';
-                applyRolePermissions();
-            } else {
+                if (!response.ok) {
+                    throw new Error('Server response was not ok');
+                }
+        
+                const data = await response.json();
+        
+                if (data.success) {
+                    currentUser = { role: data.role, id: data.id };
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    applyRolePermissions();
+                } else {
+                    error.innerText = "Invalid credentials!";
+                    error.style.display = 'block';
+                }
+            } catch (err) {
+                error.innerText = "Backend API is offline or not found on localhost.";
                 error.style.display = 'block';
             }
         }
@@ -1942,9 +2252,78 @@
             openTranscriptModal(currentUser.id, 'My Official Transcript');
         }
         
-        // Logic for Instructor Profile
-        function showInstructorInfo() {
-            alert("Profile: Instructor\nQualification: PhD Data Science\nCourses: Database Systems, Programming.");
+        let currentInstructorData = null;
+
+        async function loadInstructorPortal() {
+            switchTab('tab-instructor-portal', document.querySelector('.inst-only'));
+            const btnContainer = document.getElementById('instructorCourseButtons');
+            btnContainer.innerHTML = '<p style="color: var(--text-muted);">Loading your courses from database...</p>';
+
+            const response = await fetch(`/api/instructor?id=${currentUser.id}`);
+            currentInstructorData = await response.json();
+
+            btnContainer.innerHTML = '';
+            if(!currentInstructorData.courses || currentInstructorData.courses.length === 0) {
+                btnContainer.innerHTML = '<p style="color:var(--danger);">No courses have been assigned to you yet.</p>';
+                return;
+            }
+
+            currentInstructorData.courses.forEach(c => {
+                btnContainer.innerHTML += `<button class="btn-outline" style="border-color: var(--accent); color: var(--accent);" onclick="viewCourseStudents('${c.id}', '${c.name}')">${c.id} - ${c.name}</button>`;
+            });
+        }
+
+        function viewCourseStudents(courseId, courseName) {
+            document.getElementById('instructorGradingSection').style.display = 'block';
+            document.getElementById('gradingCourseTitle').innerText = `Grading: ${courseName} (${courseId})`;
+            
+            const tbody = document.getElementById('gradingStudentsBody');
+            tbody.innerHTML = '';
+
+            const studentsInCourse = currentInstructorData.students.filter(s => s.courseId === courseId);
+
+            if(studentsInCourse.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No students enrolled in this course yet.</td></tr>`;
+                return;
+            }
+
+            studentsInCourse.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 600; color: var(--accent);">${s.id}</td>
+                        <td style="font-weight: 500;">${s.fname} ${s.lname}</td>
+                        <td><input type="number" id="marks_${s.id}_${courseId}" placeholder="0" style="width: 80px; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: transparent; color: var(--text-main); outline: none;"></td>
+                        <td><input type="number" id="total_${s.id}_${courseId}" value="100" style="width: 80px; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: transparent; color: var(--text-main); outline: none;"></td>
+                        <td><button onclick="submitMarks('${s.id}', '${courseId}')" class="btn-primary" style="padding: 8px 20px; font-size: 0.85rem;">Upload Marks</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function submitMarks(studentId, courseId) {
+            const obtained = document.getElementById(`marks_${studentId}_${courseId}`).value;
+            const total = document.getElementById(`total_${studentId}_${courseId}`).value;
+            const examSession = localStorage.getItem('global_exam_type') || "Final";
+            
+            if(!obtained || !total) { alert('Please enter both obtained and total marks.'); return; }
+
+            const examData = {
+                examId: "EXM-" + Math.floor(10000 + Math.random() * 90000),
+                studentId: studentId,
+                courseId: courseId,
+                marksObtained: obtained,
+                totalMarks: total,
+                examSession: examSession
+            };
+
+            await fetch('/api/exams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(examData)
+            });
+
+            alert(`Success! Marks securely uploaded for ${studentId}.`);
+            document.getElementById(`marks_${studentId}_${courseId}`).value = ''; 
         }
         
         // Initialize only after login
