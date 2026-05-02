@@ -1756,12 +1756,14 @@
                 body: JSON.stringify(newStudent)
             });
         
-            emailjs.send("service_uustyq8", "template_xdscc5l", {
+            // Example for saveStudent
+            emailjs.send("service_id", "template_id", {
+                name: document.getElementById('fName').value, // <-- ADD THIS LINE
                 username: newStudentEmail,
                 password: newStudentId,
                 to_email: newStudentEmail,
                 website_link: window.location.origin
-            }, "JuFUzZjaUHQjrAQXd");
+            }, "user_id");
         
             loadStudents(); 
             closeModal();   
