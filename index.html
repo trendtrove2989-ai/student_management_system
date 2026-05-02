@@ -871,14 +871,22 @@
                                 <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">
                                     Current Active Exam Session: <strong id="currentActiveSessionDisplay" style="color: var(--danger); font-size: 1.1rem;">Not Set</strong>
                                 </p>
+
+                                <!-- NEW: Department Filter Buttons -->
+                                <div id="examDepartmentButtons" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 25px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;">
+                                    <!-- Buttons will load here dynamically -->
+                                </div>
                                 
-                                <div style="overflow-x: auto;">
+                                <!-- NEW: Filtered Exams Table -->
+                                <div style="overflow-x: auto; display: none;" id="examDepartmentTableContainer">
+                                    <h3 id="examDepartmentTitle" style="color: var(--accent); margin-bottom: 15px;"></h3>
                                     <table>
                                         <thead>
                                             <tr>
                                                 <th>Student ID</th>
                                                 <th>Student Name</th>
-                                                <th>Action</th>
+                                                <th>Exam Type</th>
+                                                <th>Total Marks</th>
                                             </tr>
                                         </thead>
                                         <tbody id="examStudentsListBody">
@@ -1329,10 +1337,82 @@
             </div>
         </div>
     </div>
-
+    <!-- PREMIUM GLASSY NOTIFICATION MODAL -->
+    <div class="modal-overlay" id="glassNotificationModal" style="z-index: 999999;">
+        <div class="glass-card modal-content sm-modal" style="width: 420px; text-align: center; padding: 40px 30px;">
+            <div id="notificationIcon" style="font-size: 3.5rem; margin-bottom: 15px; animation: pulsePrompt 2s infinite ease-in-out;"></div>
+            <h2 id="notificationTitle" style="color: var(--text-main); margin-bottom: 10px; font-weight: 600;">Notification</h2>
+            <p id="notificationMessage" style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 30px;"></p>
+            <div id="notificationButtons" style="display: flex; justify-content: center; gap: 15px;">
+                <!-- Buttons injected via JS -->
+            </div>
+        </div>
+    </div>
 
     <!-- JAVASCRIPT LOGIC -->
     <script>
+        // --- CUSTOM GLASSY NOTIFICATIONS ---
+        function customAlert(message, type = 'info') {
+            const modal = document.getElementById('glassNotificationModal');
+            const icon = document.getElementById('notificationIcon');
+            const title = document.getElementById('notificationTitle');
+            const btnContainer = document.getElementById('notificationButtons');
+            
+            if (type === 'success') {
+                icon.innerHTML = '✨';
+                title.innerText = 'Success!';
+                title.style.color = 'var(--success)';
+            } else if (type === 'error') {
+                icon.innerHTML = '⚠️';
+                title.innerText = 'Action Required';
+                title.style.color = 'var(--danger)';
+            } else {
+                icon.innerHTML = '🔔';
+                title.innerText = 'Notice';
+                title.style.color = 'var(--accent)';
+            }
+
+            document.getElementById('notificationMessage').innerText = message;
+            btnContainer.innerHTML = `<button class="btn-primary" onclick="closeNotification()">Understood</button>`;
+            
+            modal.classList.add('active');
+        }
+
+        // Custom Confirm returns a Promise so we can use "await"
+        function customConfirm(message) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('glassNotificationModal');
+                const icon = document.getElementById('notificationIcon');
+                const title = document.getElementById('notificationTitle');
+                const btnContainer = document.getElementById('notificationButtons');
+
+                icon.innerHTML = '❓';
+                title.innerText = 'Are you sure?';
+                title.style.color = 'var(--accent)';
+                document.getElementById('notificationMessage').innerText = message;
+
+                btnContainer.innerHTML = `
+                    <button class="btn-outline" id="btnCancelConfirm">Cancel</button>
+                    <button class="btn-primary" id="btnYesConfirm" style="background: var(--danger); box-shadow: 0 10px 20px rgba(255, 71, 87, 0.2);">Yes, Proceed</button>
+                `;
+
+                modal.classList.add('active');
+
+                document.getElementById('btnCancelConfirm').onclick = () => {
+                    closeNotification();
+                    resolve(false);
+                };
+
+                document.getElementById('btnYesConfirm').onclick = () => {
+                    closeNotification();
+                    resolve(true);
+                };
+            });
+        }
+
+        function closeNotification() {
+            document.getElementById('glassNotificationModal').classList.remove('active');
+        }
         // --- PRELOADER ANIMATION LOGIC ---
         document.addEventListener("DOMContentLoaded", () => {
             const preloader = document.getElementById('preloader');
@@ -2095,8 +2175,7 @@
             alert(`Global Exam Session set to: ${val}`);
         }
 
-        function loadExamsView() {
-            const students = JSON.parse(localStorage.getItem('premium_students_full')) || [];
+        async function loadExamsView() {
             const currentType = localStorage.getItem('global_exam_type') || "Not Set";
             
             const displayHeader = document.getElementById('currentActiveSessionDisplay');
@@ -2105,24 +2184,97 @@
                 displayHeader.style.color = currentType === "Not Set" ? "var(--danger)" : "var(--accent)";
             }
 
-            const tbody = document.getElementById('examStudentsListBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
+            const btnContainer = document.getElementById('examDepartmentButtons');
+            const tableContainer = document.getElementById('examDepartmentTableContainer');
+            if(!btnContainer) return;
 
-            if(students.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No students available in the directory.</td></tr>`;
+            btnContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.9rem;">Loading departments...</span>';
+            tableContainer.style.display = 'none'; // Hide table until a button is clicked
+
+            try {
+                const response = await fetch('/api/departments');
+                const departments = await response.json();
+
+                btnContainer.innerHTML = '';
+                if(departments.length === 0) {
+                    btnContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.9rem;">No departments available.</span>';
+                    return;
+                }
+
+                // Generate a button for each department
+                departments.forEach(d => {
+                    btnContainer.innerHTML += `<button class="btn-outline" style="border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.3);" onclick="loadDepartmentExams('${d.name}')">${d.name}</button>`;
+                });
+            } catch (error) {
+                btnContainer.innerHTML = '<span style="color: var(--danger); font-size: 0.9rem;">Failed to fetch departments from the server.</span>';
+            }
+        }
+
+        async function loadDepartmentExams(deptName) {
+            const tableContainer = document.getElementById('examDepartmentTableContainer');
+            const title = document.getElementById('examDepartmentTitle');
+            const tbody = document.getElementById('examStudentsListBody');
+            
+            tableContainer.style.display = 'block';
+            title.innerText = `${deptName} Department`;
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading students...</td></tr>';
+
+            const currentType = localStorage.getItem('global_exam_type');
+            if (!currentType || currentType === "Not Set") {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--danger);">Please Set Global Exam Type First.</td></tr>`;
                 return;
             }
 
-            students.forEach(s => {
-                tbody.innerHTML += `<tr>
-                                    <td style="color: var(--accent); font-weight: 600;">${s.id}</td>
-                                    <td style="font-weight: 500;">${s.fname} ${s.lname}</td>
-                                    <td>
-                                        <button onclick="openViewExamDetailsModal('${s.id}', '${s.fname} ${s.lname}', '${s.program}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">View Details</button>
-                                    </td>
-                                </tr>`;
-            });
+            try {
+                // Fetch Students, Enrollments, and Courses to calculate total marks
+                const [stuRes, enrRes, crsRes] = await Promise.all([
+                    fetch('/api/students'),
+                    fetch('/api/enrollments'),
+                    fetch('/api/courses')
+                ]);
+                
+                const allStudents = await stuRes.json();
+                const enrollments = await enrRes.json();
+                const courses = await crsRes.json();
+                
+                // Filter students by selected department
+                const deptStudents = allStudents.filter(s => s.department === deptName);
+
+                if (deptStudents.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">No students enrolled in the ${deptName} department.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                deptStudents.forEach(s => {
+                    // Aggregate total exam marks based on the courses this specific student is enrolled in
+                    const stuEnrollments = enrollments.filter(e => e.studentId === s.id);
+                    let totalMarks = 0;
+                    
+                    if(stuEnrollments.length > 0) {
+                        stuEnrollments.forEach(e => {
+                            const course = courses.find(c => c.id === e.courseId);
+                            if(course) {
+                                totalMarks += parseInt(course.totalMarks || 100);
+                            }
+                        });
+                    } else {
+                        totalMarks = "Not Enrolled in Courses";
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="color: var(--accent); font-weight: 600;">${s.id}</td>
+                            <td style="font-weight: 500;">${s.fname} ${s.lname}</td>
+                            <td><span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981; border-color: rgba(16, 185, 129, 0.3); text-transform: uppercase;">${currentType}</span></td>
+                            <td style="font-weight: 600;">${totalMarks}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--danger);">Error connecting to the database to fetch records.</td></tr>`;
+            }
         }
 
         function openViewExamDetailsModal(stuId, stuName, program) {
@@ -2565,8 +2717,46 @@
 
         async function fetchInstructorData() {
             if (!globalInstData) {
-                const response = await fetch(`/api/instructor?id=${currentUser.id}`);
-                globalInstData = await response.json();
+                try {
+                    // Try the primary endpoint first
+                    const response = await fetch(`/api/instructor?id=${currentUser.id}`);
+                    if (!response.ok) throw new Error("Primary endpoint failed");
+                    globalInstData = await response.json();
+                } catch (error) {
+                    // Fallback: Safely aggregate data using the endpoints that already work
+                    let assignments = [], courses = [], enrollments = [], students = [];
+                    try {
+                        const [aRes, cRes, eRes, sRes] = await Promise.all([
+                            fetch('/api/assignments'), fetch('/api/courses'),
+                            fetch('/api/enrollments'), fetch('/api/students')
+                        ]);
+                        assignments = await aRes.json();
+                        courses = await cRes.json();
+                        enrollments = await eRes.json();
+                        students = await sRes.json();
+                    } catch (err) {
+                        console.error("Fallback data fetch failed", err);
+                    }
+
+                    // 1. Get courses assigned to this instructor
+                    const myAssignments = assignments.filter(a => a.instructorId === currentUser.id);
+                    const myCourses = myAssignments.map(a => {
+                        const c = courses.find(course => course.id === a.courseId);
+                        return c ? c : { id: a.courseId, name: 'Unknown Course' };
+                    });
+
+                    // 2. Get students enrolled in those courses
+                    const myCourseIds = myCourses.map(c => c.id);
+                    const myStudents = [];
+                    enrollments.forEach(e => {
+                        if (myCourseIds.includes(e.courseId)) {
+                            const s = students.find(stu => stu.id === e.studentId);
+                            if (s) myStudents.push({ ...s, courseId: e.courseId });
+                        }
+                    });
+
+                    globalInstData = { courses: myCourses, students: myStudents };
+                }
             }
             return globalInstData;
         }
