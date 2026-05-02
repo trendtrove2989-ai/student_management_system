@@ -709,14 +709,15 @@
                             <li class="admin-only" onclick="switchTab('tab-exams', this)">Exams Schedule</li>
                             
                             <!-- Instructor Only -->
-                            <li class="inst-only" style="display:none;" onclick="loadInstructorPortal()">My Teaching Load</li>
-                            
+                            <li class="inst-only" style="display:none;" id="nav-inst-profile" onclick="switchTab('tab-inst-profile', this); loadInstProfile();">My Profile</li>
+                            <li class="inst-only" style="display:none;" onclick="switchTab('tab-inst-upload', this); loadInstUpload();">Upload Marks</li>
+                            <li class="inst-only" style="display:none;" onclick="switchTab('tab-inst-results', this); loadInstResults();">See Results</li>
                             <!-- Student Only -->
-                            <li class="stu-only" style="display:none;" onclick="showStudentInfo()">My Profile</li>
-                            <li class="stu-only" style="display:none;" onclick="openStudentGrades()">My Marks & Progress</li>
+                            <li class="stu-only" style="display:none;" id="nav-stu-profile" onclick="switchTab('tab-student-profile', this); loadStudentProfile();">My Profile</li>
+                            <li class="stu-only" style="display:none;" onclick="switchTab('tab-student-marks', this); loadStudentMarks();">My Marks & Progress</li>
                             
                             <!-- Common -->
-                            <li class="all-users" onclick="switchTab('tab-grades', this)">Transcripts</li>
+                            <li class="all-users" onclick="handleTranscriptClick(this)">Transcripts</li>
                             <li style="color: var(--danger); margin-top: 20px; border-top: 1px solid var(--glass-border);" onclick="location.reload()">Logout</li>
                         </ul>
                     </aside>
@@ -913,35 +914,86 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- TAB: INSTRUCTOR PORTAL -->
-                        <div id="tab-instructor-portal" class="tab-content" style="display: none;">
+                        <!-- TAB: STUDENT PROFILE -->
+                        <div id="tab-student-profile" class="tab-content" style="display: none;">
                             <div class="glass-card">
                                 <div class="card-header">
-                                    <h2>My Teaching Load & Grading</h2>
+                                    <h2>My Profile</h2>
                                 </div>
-                                <p style="color: var(--text-muted); margin-bottom: 20px;">Select your assigned course to view enrolled students and upload marks.</p>
-                                
-                                <div id="instructorCourseButtons" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
-                                    <!-- Dynamic Course Buttons Go Here -->
+                                <div id="studentProfileDetails" style="display: grid; gap: 15px; color: var(--text-main); font-size: 1.05rem;">
+                                    <!-- Populated via JS -->
                                 </div>
+                                <h3 style="margin-top: 30px; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">Enrolled Courses</h3>
+                                <ul id="studentProfileCourses" style="list-style: none; padding: 15px 0;">
+                                    <!-- Populated via JS -->
+                                </ul>
+                            </div>
+                        </div>
 
-                                <div id="instructorGradingSection" style="display: none;">
-                                    <h3 id="gradingCourseTitle" style="color: var(--accent); margin-bottom: 15px;"></h3>
+                        <!-- TAB: STUDENT MARKS & PROGRESS -->
+                        <div id="tab-student-marks" class="tab-content" style="display: none;">
+                            <div class="glass-card">
+                                <div class="card-header">
+                                    <h2>My Marks & Progress</h2>
+                                </div>
+                                <p style="color: var(--text-muted); margin-bottom: 20px;">Select an enrolled course to view your marks.</p>
+                                <div id="studentMarksButtons" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+                                    <!-- Populated via JS -->
+                                </div>
+                                <div id="studentMarksDisplay" style="display: none; background: rgba(255,255,255,0.4); padding: 20px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                                    <!-- Populated via JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- TAB: INSTRUCTOR PROFILE -->
+                        <div id="tab-inst-profile" class="tab-content" style="display: none;">
+                            <div class="glass-card">
+                                <div class="card-header"><h2>My Profile</h2></div>
+                                <div id="instProfileDetails" style="display: grid; gap: 15px; font-size: 1.05rem; color: var(--text-main);">
+                                    <!-- Populated via JS -->
+                                </div>
+                                <h3 style="margin-top: 30px; color: var(--accent); border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">Assigned Courses</h3>
+                                <ul id="instProfileCourses" style="list-style: none; padding: 15px 0;"></ul>
+                            </div>
+                        </div>
+
+                        <!-- TAB: INSTRUCTOR UPLOAD MARKS -->
+                        <div id="tab-inst-upload" class="tab-content" style="display: none;">
+                            <div class="glass-card">
+                                <div class="card-header"><h2>Upload Marks</h2></div>
+                                <div id="instUploadButtons" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;"></div>
+                                <div id="instUploadSection" style="display: none;">
+                                    <h3 id="uploadCourseTitle" style="color: var(--accent); margin-bottom: 15px;"></h3>
+                                    
+                                    <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
+                                        <label style="font-weight: 500; color: var(--text-muted);">Select Exam Type:</label>
+                                        <select id="instExamTypeSelect" style="padding: 8px 15px; border-radius: 8px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.5); outline: none; font-family: 'Poppins';">
+                                            <option value="Midterm">Midterm</option>
+                                            <option value="Final">Final</option>
+                                        </select>
+                                    </div>
+
                                     <div style="overflow-x: auto;">
                                         <table>
-                                            <thead>
-                                                <tr>
-                                                    <th>Student ID</th>
-                                                    <th>Name</th>
-                                                    <th>Marks Obtained</th>
-                                                    <th>Total Marks</th>
-                                                    <th>Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="gradingStudentsBody">
-                                                <!-- Dynamic Students Go Here -->
-                                            </tbody>
+                                            <thead><tr><th>Student ID</th><th>Name</th><th>Obtained Marks</th><th>Total Marks</th><th>Action</th></tr></thead>
+                                            <tbody id="instUploadTableBody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB: INSTRUCTOR SEE RESULTS -->
+                        <div id="tab-inst-results" class="tab-content" style="display: none;">
+                            <div class="glass-card">
+                                <div class="card-header"><h2>Course Results</h2></div>
+                                <div id="instResultsButtons" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;"></div>
+                                <div id="instResultsSection" style="display: none;">
+                                    <h3 id="resultsCourseTitle" style="color: var(--accent); margin-bottom: 15px;"></h3>
+                                    <div style="overflow-x: auto;">
+                                        <table>
+                                            <thead><tr><th>Student ID</th><th>Name</th><th>Exam Type</th><th>Obtained</th><th>Total</th></tr></thead>
+                                            <tbody id="instResultsTableBody"></tbody>
                                         </table>
                                     </div>
                                 </div>
@@ -1336,7 +1388,7 @@
             document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
             element.classList.add('active');
 
-            const tabs = ['tab-students', 'tab-departments', 'tab-programs', 'tab-courses', 'tab-faculty', 'tab-exams', 'tab-grades'];
+            const tabs = ['tab-students', 'tab-departments', 'tab-programs', 'tab-courses', 'tab-faculty', 'tab-exams', 'tab-grades', 'tab-inst-profile', 'tab-inst-upload', 'tab-inst-results', 'tab-student-profile', 'tab-student-marks'];
             tabs.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -1582,7 +1634,10 @@
                     <td>${s.department}</td>
                     <td>${s.phone}</td>
                     <td>${statusHtml}</td>
-                    <td><button onclick="openEnrollModal('${s.id}', '${s.fname} ${s.lname}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">Manage</button></td>
+                    <td style="display: flex; gap: 5px;">
+                        <button onclick="openEnrollModal('${s.id}', '${s.fname} ${s.lname}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">Manage</button>
+                        <button onclick="deleteStudent('${s.id}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem; color: var(--danger); border-color: rgba(255, 71, 87, 0.4);">Delete</button>
+                    </td>
                 </tr>`;
             });
         }
@@ -1630,6 +1685,20 @@
         
             loadStudents(); 
             closeModal();   
+        }
+        async function deleteStudent(studentId) {
+            if(!confirm(`Are you sure you want to permanently remove student ${studentId} from the database?`)) return;
+            try {
+                // Calls the DELETE endpoint on your backend
+                await fetch(`/api/students/${studentId}`, { method: 'DELETE' });
+                
+                // Refresh all student-dependent views
+                loadStudents(); 
+                loadExamsView();
+                loadGradesView();
+            } catch (err) {
+                alert("Failed to delete student. Check your backend connection.");
+            }
         }
 
         // --- COURSE MODULE LOGIC ---
@@ -1740,7 +1809,10 @@
                                     <td>${i.qualification}</td>
                                     <td>${i.department}</td>
                                     <td style="font-size: 0.85rem; max-width: 200px;">${assignedCourseNames}</td>
-                                    <td><button onclick="openAssignModal('${i.id}', '${i.fname} ${i.lname}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">Manage Courses</button></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <button onclick="openAssignModal('${i.id}', '${i.fname} ${i.lname}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem;">Manage</button>
+                                        <button onclick="deleteInstructor('${i.id}')" class="btn-outline" style="padding: 5px 15px; font-size: 0.8rem; color: var(--danger); border-color: rgba(255, 71, 87, 0.4);">Delete</button>
+                                    </td>
                                 </tr>`;
                 }
             });
@@ -1784,7 +1856,18 @@
             loadInstructors(); 
             closeInstructorModal();   
         }
-
+        async function deleteInstructor(instructorId) {
+            if(!confirm(`Are you sure you want to permanently remove instructor ${instructorId} from the database?`)) return;
+            try {
+                // Calls the DELETE endpoint on your backend
+                await fetch(`/api/instructors/${instructorId}`, { method: 'DELETE' });
+                
+                // Refresh instructor table
+                loadInstructors();
+            } catch (err) {
+                alert("Failed to delete instructor. Check your backend connection.");
+            }
+        }
         // --- MANY-TO-MANY COURSE ASSIGNMENT LOGIC ---
         const aModal = document.getElementById('assignModal');
         let currentAssignInstructorId = null;
@@ -2236,13 +2319,17 @@
             } 
             else if (currentUser.role === 'instructor') {
                 document.querySelectorAll('.inst-only').forEach(i => i.style.display = 'block');
-                // Logic: Instructor can only see the Exam section to add marks
-                switchTab('tab-exams', document.querySelector('.inst-only'));
-            } 
+                const profileTab = document.getElementById('nav-inst-profile');
+                switchTab('tab-inst-profile', profileTab);
+                loadInstProfile();
+            }
             else if (currentUser.role === 'student') {
                 document.querySelectorAll('.stu-only').forEach(i => i.style.display = 'block');
-                // Logic: Students see transcript by default
-                switchTab('tab-grades', document.querySelector('.all-users'));
+                
+                // Set default view to My Profile
+                const profileTab = document.getElementById('nav-stu-profile');
+                switchTab('tab-student-profile', profileTab);
+                loadStudentProfile();
             }
         }
         
@@ -2325,7 +2412,318 @@
             alert(`Success! Marks securely uploaded for ${studentId}.`);
             document.getElementById(`marks_${studentId}_${courseId}`).value = ''; 
         }
-        
+        // --- STUDENT DASHBOARD LOGIC ---
+        function handleTranscriptClick(element) {
+            if(currentUser.role === 'student') {
+                // Students go straight to their personal transcript modal
+                openTranscriptModal(currentUser.id, 'My Official Transcript');
+            } else {
+                // Admins/Instructors go to the table view
+                switchTab('tab-grades', element);
+            }
+        }
+
+        async function loadStudentProfile() {
+            const profileContainer = document.getElementById('studentProfileDetails');
+            const coursesContainer = document.getElementById('studentProfileCourses');
+            profileContainer.innerHTML = 'Loading profile...';
+            coursesContainer.innerHTML = 'Loading courses...';
+
+            try {
+                // Fetch student and their enrollments
+                const [resStu, resEnr, resCrs] = await Promise.all([
+                    fetch('/api/students'), 
+                    fetch('/api/enrollments'), 
+                    fetch('/api/courses')
+                ]);
+                
+                const allStudents = await resStu.json();
+                const enrollments = await resEnr.json();
+                const courses = await resCrs.json();
+                
+                const student = allStudents.find(s => s.id === currentUser.id);
+
+                if(!student) { profileContainer.innerHTML = 'Profile data not found.'; return; }
+
+                profileContainer.innerHTML = `
+                    <div><strong>ID:</strong> <span style="color: var(--accent);">${student.id}</span></div>
+                    <div><strong>Name:</strong> ${student.fname} ${student.lname}</div>
+                    <div><strong>Email:</strong> ${student.email || 'N/A'}</div>
+                    <div><strong>Phone:</strong> ${student.phone}</div>
+                    <div><strong>Department:</strong> ${student.department}</div>
+                    <div><strong>Program:</strong> ${student.program} (${student.level})</div>
+                `;
+
+                const myEnrollments = enrollments.filter(e => e.studentId === currentUser.id);
+                coursesContainer.innerHTML = '';
+                
+                if(myEnrollments.length === 0) {
+                    coursesContainer.innerHTML = '<li style="color:var(--text-muted);">You are not currently enrolled in any courses.</li>';
+                } else {
+                    myEnrollments.forEach(e => {
+                        const c = courses.find(course => course.id === e.courseId);
+                        const cName = c ? c.name : 'Unknown Course';
+                        coursesContainer.innerHTML += `<li style="padding: 12px; background: rgba(255,255,255,0.4); margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--glass-border);"><strong>${e.courseId}</strong> &nbsp;—&nbsp; ${cName}</li>`;
+                    });
+                }
+            } catch(e) {
+                profileContainer.innerHTML = '<span style="color: var(--danger);">Failed to load connection to Database.</span>';
+            }
+        }
+
+        async function loadStudentMarks() {
+            const btnContainer = document.getElementById('studentMarksButtons');
+            const displayArea = document.getElementById('studentMarksDisplay');
+            btnContainer.innerHTML = 'Loading courses...';
+            displayArea.style.display = 'none';
+
+            try {
+                const [resEnr, resCrs] = await Promise.all([fetch('/api/enrollments'), fetch('/api/courses')]);
+                const enrollments = await resEnr.json();
+                const courses = await resCrs.json();
+
+                const myEnrollments = enrollments.filter(e => e.studentId === currentUser.id);
+                btnContainer.innerHTML = '';
+
+                if(myEnrollments.length === 0) {
+                    btnContainer.innerHTML = '<p style="color:var(--text-muted);">No enrolled courses found.</p>';
+                    return;
+                }
+
+                myEnrollments.forEach(e => {
+                    const c = courses.find(course => course.id === e.courseId);
+                    const cName = c ? c.name : 'Unknown Course';
+                    btnContainer.innerHTML += `<button class="btn-outline" style="border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.3);" onclick="viewSpecificCourseMarks('${e.courseId}', '${cName}')">${cName}</button>`;
+                });
+            } catch(e) {
+                btnContainer.innerHTML = 'Error communicating with database.';
+            }
+        }
+
+        async function viewSpecificCourseMarks(courseId, courseName) {
+            const displayArea = document.getElementById('studentMarksDisplay');
+            displayArea.style.display = 'block';
+            displayArea.innerHTML = 'Fetching results...';
+
+            try {
+                const res = await fetch(`/api/transcript?id=${currentUser.id}`);
+                const data = await res.json();
+                const examsForCourse = (data.exams || []).filter(ex => ex.courseId === courseId);
+
+                let html = `<h3 style="color: var(--accent); margin-bottom: 15px;">${courseName} (${courseId})</h3>`;
+
+                if(examsForCourse.length === 0) {
+                    html += `<p style="color: var(--text-muted);">No marks have been uploaded by your instructor for this course yet.</p>`;
+                } else {
+                    examsForCourse.forEach(ex => {
+                        const isFinal = ex.examSession.toLowerCase() === 'final';
+                        let gradeHtml = '';
+                        
+                        if (isFinal) {
+                            const percentage = (parseFloat(ex.marksObtained) / parseFloat(ex.totalMarks)) * 100;
+                            let grade = 'F';
+                            if(percentage >= 86) grade = 'A';
+                            else if(percentage >= 82) grade = 'A-';
+                            else if(percentage >= 78) grade = 'B+';
+                            else if(percentage >= 74) grade = 'B';
+                            else if(percentage >= 70) grade = 'B-';
+                            else if(percentage >= 66) grade = 'C+';
+                            else if(percentage >= 62) grade = 'C';
+                            else if(percentage >= 58) grade = 'C-';
+                            else if(percentage >= 54) grade = 'D+';
+                            else if(percentage >= 50) grade = 'D';
+
+                            let gradeColor = grade === 'F' ? "var(--danger)" : (grade.includes('A') ? "var(--success)" : "var(--text-main)");
+                            gradeHtml = `<div style="margin-top: 10px; font-size: 1.1rem;"><strong>Generated Grade:</strong> <span style="color: ${gradeColor}; font-weight: 800;">${grade}</span></div>`;
+                        }
+
+                        html += `
+                            <div style="background: rgba(255,255,255,0.6); padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--glass-border);">
+                                <div><strong>Exam Type:</strong> <span style="text-transform: uppercase; font-weight: 600;">${ex.examSession}</span></div>
+                                <div style="margin-top: 5px;"><strong>Total Marks:</strong> ${ex.totalMarks}</div>
+                                <div><strong>Obtained Marks:</strong> <span style="color: var(--accent); font-weight: bold;">${ex.marksObtained}</span></div>
+                                ${gradeHtml}
+                            </div>
+                        `;
+                    });
+                }
+                displayArea.innerHTML = html;
+            } catch(e) {
+                displayArea.innerHTML = '<p style="color: var(--danger);">Failed to load results from server.</p>';
+            }
+        }
+        // --- INSTRUCTOR RE-DESIGNED LOGIC ---
+        let globalInstData = null; 
+
+        async function fetchInstructorData() {
+            if (!globalInstData) {
+                const response = await fetch(`/api/instructor?id=${currentUser.id}`);
+                globalInstData = await response.json();
+            }
+            return globalInstData;
+        }
+
+        async function loadInstProfile() {
+            const profileContainer = document.getElementById('instProfileDetails');
+            const coursesContainer = document.getElementById('instProfileCourses');
+            profileContainer.innerHTML = 'Loading...'; coursesContainer.innerHTML = '';
+            
+            try {
+                const res = await fetch('/api/instructors');
+                const data = await res.json();
+                const instructors = data.instructors || data; // Handle depending on API structure
+                const inst = instructors.find(i => i.id === currentUser.id);
+                
+                if (inst) {
+                    profileContainer.innerHTML = `
+                        <div><strong>ID:</strong> <span style="color: var(--accent);">${inst.id}</span></div>
+                        <div><strong>Name:</strong> ${inst.fname} ${inst.lname}</div>
+                        <div><strong>Email:</strong> ${inst.email || 'N/A'}</div>
+                        <div><strong>Department:</strong> ${inst.department}</div>
+                        <div><strong>Qualification:</strong> ${inst.qualification} (${inst.type})</div>
+                    `;
+                }
+
+                const instData = await fetchInstructorData();
+                if(!instData.courses || instData.courses.length === 0) {
+                    coursesContainer.innerHTML = '<li style="color:var(--text-muted);">No courses currently assigned.</li>';
+                } else {
+                    instData.courses.forEach(c => {
+                        coursesContainer.innerHTML += `<li style="padding: 12px; background: rgba(255,255,255,0.4); margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--glass-border);"><strong>${c.id}</strong> — ${c.name}</li>`;
+                    });
+                }
+            } catch(e) { profileContainer.innerHTML = '<span style="color:var(--danger)">Database connection error.</span>'; }
+        }
+
+        async function loadInstUpload() {
+            const btnContainer = document.getElementById('instUploadButtons');
+            document.getElementById('instUploadSection').style.display = 'none';
+            btnContainer.innerHTML = 'Loading courses...';
+            
+            const data = await fetchInstructorData();
+            btnContainer.innerHTML = '';
+            if(!data.courses || data.courses.length === 0) {
+                btnContainer.innerHTML = '<p style="color:var(--text-muted);">No courses assigned.</p>'; return;
+            }
+            data.courses.forEach(c => {
+                btnContainer.innerHTML += `<button class="btn-outline" style="border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.3);" onclick="openInstUploadCourse('${c.id}', '${c.name}')">${c.name}</button>`;
+            });
+        }
+
+        function openInstUploadCourse(courseId, courseName) {
+            document.getElementById('instUploadSection').style.display = 'block';
+            document.getElementById('uploadCourseTitle').innerText = `Grading: ${courseName} (${courseId})`;
+            
+            const tbody = document.getElementById('instUploadTableBody');
+            tbody.innerHTML = '';
+            
+            const studentsInCourse = globalInstData.students.filter(s => s.courseId === courseId);
+            if(studentsInCourse.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No students currently enrolled in this course.</td></tr>`;
+                return;
+            }
+            
+            studentsInCourse.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight: 600; color: var(--accent);">${s.id}</td>
+                        <td style="font-weight: 500;">${s.fname} ${s.lname}</td>
+                        <td><input type="number" id="new_marks_${s.id}_${courseId}" placeholder="0" style="width: 80px; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: transparent; outline: none; color: var(--text-main);"></td>
+                        <td><input type="number" id="new_total_${s.id}_${courseId}" value="100" style="width: 80px; padding: 8px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: transparent; outline: none; color: var(--text-main);"></td>
+                        <td><button onclick="submitNewMarks('${s.id}', '${courseId}')" class="btn-primary" style="padding: 8px 20px; font-size: 0.85rem;">Upload Result</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function submitNewMarks(studentId, courseId) {
+            const obtained = document.getElementById(`new_marks_${studentId}_${courseId}`).value;
+            const total = document.getElementById(`new_total_${studentId}_${courseId}`).value;
+            const examSession = document.getElementById('instExamTypeSelect').value;
+            
+            if(!obtained || !total) { alert('Please enter both obtained and total marks.'); return; }
+
+            const examData = {
+                examId: "EXM-" + Math.floor(10000 + Math.random() * 90000),
+                studentId: studentId,
+                courseId: courseId,
+                marksObtained: obtained,
+                totalMarks: total,
+                examSession: examSession
+            };
+
+            await fetch('/api/exams', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(examData)
+            });
+
+            alert(`Success! ${examSession} marks securely uploaded for ${studentId}.`);
+            document.getElementById(`new_marks_${studentId}_${courseId}`).value = ''; 
+        }
+
+        async function loadInstResults() {
+            const btnContainer = document.getElementById('instResultsButtons');
+            document.getElementById('instResultsSection').style.display = 'none';
+            btnContainer.innerHTML = 'Loading courses...';
+            
+            const data = await fetchInstructorData();
+            btnContainer.innerHTML = '';
+            if(!data.courses || data.courses.length === 0) {
+                btnContainer.innerHTML = '<p style="color:var(--text-muted);">No courses assigned.</p>'; return;
+            }
+            data.courses.forEach(c => {
+                btnContainer.innerHTML += `<button class="btn-outline" style="border-color: var(--accent); color: var(--accent); background: rgba(255,255,255,0.3);" onclick="openInstResultsCourse('${c.id}', '${c.name}')">${c.name}</button>`;
+            });
+        }
+
+        async function openInstResultsCourse(courseId, courseName) {
+            document.getElementById('instResultsSection').style.display = 'block';
+            document.getElementById('resultsCourseTitle').innerText = `Results: ${courseName} (${courseId})`;
+            
+            const tbody = document.getElementById('instResultsTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Fetching records...</td></tr>';
+            
+            try {
+                // To display all student marks for this course, we fetch the exams array directly from localStorage
+                // assuming local storage premium_exams holds the data, or fallback to an API endpoint.
+                let exams = [];
+                try {
+                    const res = await fetch('/api/exams');
+                    if(res.ok) exams = await res.json();
+                    else exams = JSON.parse(localStorage.getItem('premium_exams')) || [];
+                } catch(err) {
+                    exams = JSON.parse(localStorage.getItem('premium_exams')) || [];
+                }
+
+                const studentsInCourse = globalInstData.students.filter(s => s.courseId === courseId);
+                
+                tbody.innerHTML = '';
+                let hasResults = false;
+
+                studentsInCourse.forEach(s => {
+                    const studentExams = exams.filter(e => e.studentId === s.id && e.courseId === courseId);
+                    studentExams.forEach(ex => {
+                        hasResults = true;
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight: 600; color: var(--accent);">${s.id}</td>
+                                <td>${s.fname} ${s.lname}</td>
+                                <td style="text-transform: uppercase; font-weight: 500;">${ex.examSession}</td>
+                                <td style="font-weight: bold; color: var(--accent);">${ex.marksObtained}</td>
+                                <td>${ex.totalMarks}</td>
+                            </tr>
+                        `;
+                    });
+                });
+
+                if(!hasResults) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--text-muted);">No results uploaded yet for this course.</td></tr>';
+                }
+            } catch(e) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: var(--danger);">Failed to load results.</td></tr>';
+            }
+        }
         // Initialize only after login
         window.onload = () => {
             loadDepartments();
