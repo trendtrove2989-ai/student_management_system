@@ -1352,7 +1352,7 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- CUSTOM GLASSY NOTIFICATIONS ---
-        function customcustomAlert(message, type = 'info') {
+        function customAlert(message, type = 'info') {
             const modal = document.getElementById('glassNotificationModal');
             const icon = document.getElementById('notificationIcon');
             const title = document.getElementById('notificationTitle');
@@ -1371,7 +1371,7 @@
                 title.innerText = 'Notice';
                 title.style.color = 'var(--accent)';
             }
-
+        
             document.getElementById('notificationMessage').innerText = message;
             btnContainer.innerHTML = `<button class="btn-primary" onclick="closeNotification()">Understood</button>`;
             
@@ -2837,8 +2837,11 @@
             const total = document.getElementById(`new_total_${studentId}_${courseId}`).value;
             const examSession = document.getElementById('instExamTypeSelect').value;
             
-            if(!obtained || !total) { customAlert('Please enter both obtained and total marks.'); return; }
-
+            if(!obtained || !total) { 
+                customAlert('Please enter both obtained and total marks.', 'error'); 
+                return; 
+            }
+        
             const examData = {
                 examId: "EXM-" + Math.floor(10000 + Math.random() * 90000),
                 studentId: studentId,
@@ -2847,15 +2850,23 @@
                 totalMarks: total,
                 examSession: examSession
             };
-
-            await fetch('/api/exams', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(examData)
-            });
-
-            customAlert(`Success! ${examSession} marks securely uploaded for ${studentId}.`);
-            document.getElementById(`new_marks_${studentId}_${courseId}`).value = ''; 
+        
+            try {
+                const response = await fetch('/api/exams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(examData)
+                });
+        
+                if(response.ok) {
+                    customAlert(`Success! ${examSession} marks securely uploaded for ${studentId}.`, 'success');
+                    document.getElementById(`new_marks_${studentId}_${courseId}`).value = ''; 
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                customAlert('Failed to upload marks to the database.', 'error');
+            }
         }
 
         async function loadInstResults() {
